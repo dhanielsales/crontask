@@ -1,0 +1,115 @@
+version: "3"
+
+dotenv:
+  - ./app.env
+
+vars:
+  POSTGRES_CONTAINER_NAME: postgres_db
+  REDISDB_CONTAINER_NAME: redisdb_db
+
+tasks:
+  dev:
+    desc: Run development server
+    cmds:
+      - air
+
+  docs:
+    desc: Generate swagger docs
+    cmds:
+      - swag init --parseDependency --dir  ./cmd/service,./internal/modules
+
+  build:
+    desc: Build binary
+    cmds:
+      - go build -o 'dist/{{.APP_NAME}}' cmd/service/main.go
+
+  lint:
+    desc: Run linting
+    cmds:
+      - golangci-lint run
+
+  start:
+    desc: Start binary
+    cmds:
+      - ./dist/{{.APP_NAME}}
+
+  update-repositories:
+    desc: Update database repositories
+    cmds:
+      - sqlc generate
+
+  migration-create:
+    desc: "Create migration. Example: task migration-create name=create_users_table"
+    cmds:
+      - migrate create -ext sql -dir internal/config/migrations -seq '{{.name}}'
+
+  migration-up:
+    desc: Run migrations
+    cmds:
+      - migrate -database '{{.POSTGRES_URL}}' -path internal/config/migrations -verbose up
+
+  migration-down:
+    desc: Rollback migrations
+    cmds:
+      - migrate -database '{{.POSTGRES_URL}}' -path internal/config/migrations -verbose down 1
+
+  migration-fix:
+    desc: "Fix migrations to specific version. Example: task migration-force version=1"
+    cmds:
+      - migrate -database '{{.POSTGRES_URL}}' -path internal/config/migrations -verbose force '{{.version}}'
+
+  install:
+    desc: Install dependencies
+    cmds:
+      - go mod download
+
+  setup-tools:
+    desc: Install tools
+    cmds:
+      - go get -u github.com/swaggo/swag
+      - go install github.com/cosmtrek/air@latest
+      - go install github.com/go-task/task/v3/cmd/task@latest
+      - go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+      - go install go.uber.org/mock/mockgen@latest
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - npm i -g json-graphql-server
+
+  setup-infra:
+    desc: Create infrastructure
+    cmds:
+      - docker run --name '{{.POSTGRES_CONTAINER_NAME}}' --network=app-network -e "POSTGRES_USER=postgres" -e "POSTGRES_PASSWORD=postgres" -e "POSTGRES_DB=main" -d -p 5432:5432 postgres
+      - docker run --name '{{.REDISDB_CONTAINER_NAME}}' -d -p 6379:6379 redis redis-server --requirepass "password"
+
+  start-infra:
+    desc: Start infrastructure
+    cmds:
+      - docker start '{{.POSTGRES_CONTAINER_NAME}}'
+      - docker start '{{.REDISDB_CONTAINER_NAME}}'
+
+  stop-infra:
+    desc: Stop infrastructure
+    cmds:
+      - docker stop '{{.POSTGRES_CONTAINER_NAME}}'
+      - docker stop '{{.REDISDB_CONTAINER_NAME}}'
+
+  run-mock-graphql:
+    desc: Run mock graphql server
+    cmds:
+      - json-graphql-server graphql-mock-api.json
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v ./...
+
+  test-coverage-html:
+    desc: Run tests with coverage and generate html report
+    cmds:
+      - go test ./... -coverprofile=tmp/coverage.out
+      - go tool cover -html=tmp/coverage.out
+
+  test-coverage:
+    desc: Run tests with coverage
+    cmds:
+      - go test ./... -coverprofile=tmp/coverage.out
+      - go tool cover -func=tmp/coverage.out

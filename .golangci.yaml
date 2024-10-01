@@ -1,0 +1,129 @@
+linters-settings:
+  interfacebloat:
+    max: 15
+  perfsprint:
+    int-conversion: false
+    err-error: false
+    errorf: false
+    sprintf1: false
+    strconcat: false
+  exhaustive:
+    check-generated: true
+    default-signifies-exhaustive: true
+  funlen:
+    lines: 120
+    statements: 70
+  cyclop:
+    max-complexity: 15
+    skip-tests: true
+  govet:
+    enable:
+      - shadow
+  gocyclo:
+    min-complexity: 15
+  dupl:
+    threshold: 100
+  gosec:
+    excludes:
+      - G601
+  stylecheck:
+    checks:
+      - ST1000
+      - ST1016
+      - ST1020
+      - ST1021
+      - ST1022
+  godot:
+    period: false
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  misspell:
+    locale: US
+  lll:
+    line-length: 140
+  goimports:
+    local-prefixes: github.com/golangci/golangci-lint
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - performance
+      - style
+  varnamelen:
+    max-distance: 10
+    ignore-decls:
+      - "c *gin.Context"
+      - "c *fiber.Ctx"
+      - "c echo.Context"
+      - "rw http.ResponseWriter"
+      - "wg sync.WaitGroup"
+      - "wg *sync.WaitGroup"
+      - "v2 *gin.RouterGroup"
+      - "v3 *gin.RouterGroup"
+    ignore-names:
+      - tt
+      - ev
+      - db
+      - id
+      - tx
+      - i
+
+linters:
+  enable-all: true
+  disable:
+    - exportloopref
+    - execinquery
+    - testifylint
+    - nolintlint
+    - nlreturn
+    - gomnd
+    - tagalign
+    - gochecknoglobals
+    - lll
+    - dupl
+    - depguard
+    - wsl
+    - godox
+    - err113
+    - gci
+    - errorlint
+    - wrapcheck
+    - tagliatelle
+    - containedctx
+    - maintidx
+    - exhaustruct
+    - nonamedreturns
+    - rowserrcheck
+    - sqlclosecheck
+    - wastedassign
+    - ireturn
+    - revive
+    - mnd
+
+issues:
+  exclude-rules:
+    - path: cmd/
+      linters:
+        - forbidigo
+    - path: _test.go
+      linters:
+        - funlen
+        - perfsprint
+        - testpackage
+        - forcetypeassert
+    - path: _internal_test.go
+      linters:
+        - testpackage
+        - perfsprint
+        - forcetypeassert
+    - text: "weak cryptographic primitive"
+      linters:
+        - gosec
+    - linters:
+        - dupword
+      source: "//.*@Param"
+    - linters:
+        - revive
+      text: "unused-parameter"
+      source: "(?i)func (.*mock.*)"
